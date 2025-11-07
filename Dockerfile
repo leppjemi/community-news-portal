@@ -69,6 +69,13 @@ RUN echo 'server {' > /etc/nginx/http.d/default.conf.template \
     && echo '    index index.php index.html;' >> /etc/nginx/http.d/default.conf.template \
     && echo '    root /var/www/html/public;' >> /etc/nginx/http.d/default.conf.template \
     && echo '' >> /etc/nginx/http.d/default.conf.template \
+    && echo '    # Simple health check endpoint (responds immediately, no PHP required)' >> /etc/nginx/http.d/default.conf.template \
+    && echo '    location = /health {' >> /etc/nginx/http.d/default.conf.template \
+    && echo '        access_log off;' >> /etc/nginx/http.d/default.conf.template \
+    && echo '        return 200 "healthy\n";' >> /etc/nginx/http.d/default.conf.template \
+    && echo '        add_header Content-Type text/plain;' >> /etc/nginx/http.d/default.conf.template \
+    && echo '    }' >> /etc/nginx/http.d/default.conf.template \
+    && echo '' >> /etc/nginx/http.d/default.conf.template \
     && echo '    location / {' >> /etc/nginx/http.d/default.conf.template \
     && echo '        try_files $uri $uri/ /index.php?$query_string;' >> /etc/nginx/http.d/default.conf.template \
     && echo '    }' >> /etc/nginx/http.d/default.conf.template \

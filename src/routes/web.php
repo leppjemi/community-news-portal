@@ -11,6 +11,11 @@ use App\Http\Controllers\SocialShareController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+// Health check endpoint (no database required)
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok', 'service' => 'community-news-portal'], 200);
+})->name('health');
+
 // Public routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/news/{slug}', [HomeController::class, 'show'])->name('news.show');
