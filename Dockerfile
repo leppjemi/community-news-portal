@@ -62,6 +62,9 @@ RUN echo '[www]' > /usr/local/etc/php-fpm.d/zz-railway.conf \
     && echo 'pm.max_spare_servers = 3' >> /usr/local/etc/php-fpm.d/zz-railway.conf \
     && echo 'pm.max_requests = 500' >> /usr/local/etc/php-fpm.d/zz-railway.conf
 
+# Remove any default Nginx configs to ensure ours is used
+RUN rm -f /etc/nginx/http.d/*.conf /etc/nginx/conf.d/*.conf 2>/dev/null || true
+
 # Create Nginx configuration template (PORT will be substituted at runtime)
 RUN echo 'server {' > /etc/nginx/http.d/default.conf.template \
     && echo '    listen 0.0.0.0:PORT_PLACEHOLDER;' >> /etc/nginx/http.d/default.conf.template \
@@ -118,6 +121,18 @@ RUN echo '[supervisord]' > /etc/supervisord.conf \
     && echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf \
     && echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf \
     && echo '' >> /etc/supervisord.conf \
+    && echo '[program:verify-nginx]' >> /etc/supervisord.conf \
+    && echo 'command=/bin/sh -c "sleep 3 && PORT=${PORT:-80} && echo \"Verifying Nginx health endpoint...\" && curl -f http://localhost:$PORT/health && echo \"✓ Health endpoint is working!\" || echo \"✗ Health endpoint failed\""' >> /etc/supervisord.conf \
+    && echo 'autostart=true' >> /etc/supervisord.conf \
+    && echo 'autorestart=false' >> /etc/supervisord.conf \
+    && echo 'priority=8' >> /etc/supervisord.conf \
+    && echo 'startsecs=0' >> /etc/supervisord.conf \
+    && echo 'startretries=0' >> /etc/supervisord.conf \
+    && echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf \
+    && echo 'stderr_logfile_maxbytes=0' >> /etc/supervisord.conf \
+    && echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf \
+    && echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf \
+    && echo '' >> /etc/supervisord.conf \
     && echo '[program:laravel-init]' >> /etc/supervisord.conf \
     && echo 'command=/bin/sh -c "sleep 5 && cd /var/www/html && /usr/local/bin/init-app.sh || echo Warning: Initialization had errors"' >> /etc/supervisord.conf \
     && echo 'autostart=true' >> /etc/supervisord.conf \
@@ -150,6 +165,9 @@ RUN echo '#!/bin/sh' > /start.sh \
     && echo 'echo "PORT: $PORT"' >> /start.sh \
     && echo 'echo ""' >> /start.sh \
     && echo '' >> /start.sh \
+    && echo '# Remove any existing nginx configs' >> /start.sh \
+    && echo 'rm -f /etc/nginx/http.d/*.conf /etc/nginx/conf.d/*.conf 2>/dev/null || true' >> /start.sh \
+    && echo '' >> /start.sh \
     && echo '# Configure Nginx with the correct port' >> /start.sh \
     && echo 'echo "Configuring Nginx to listen on 0.0.0.0:$PORT..."' >> /start.sh \
     && echo 'sed "s/PORT_PLACEHOLDER/$PORT/" /etc/nginx/http.d/default.conf.template > /etc/nginx/http.d/default.conf' >> /start.sh \
@@ -158,6 +176,7 @@ RUN echo '#!/bin/sh' > /start.sh \
     && echo '    exit 1' >> /start.sh \
     && echo 'fi' >> /start.sh \
     && echo 'echo "✓ Nginx config created"' >> /start.sh \
+    && echo 'echo "Config file location: /etc/nginx/http.d/default.conf"' >> /start.sh \
     && echo '' >> /start.sh \
     && echo '# Test Nginx configuration' >> /start.sh \
     && echo 'echo "Testing Nginx configuration..."' >> /start.sh \
@@ -169,12 +188,15 @@ RUN echo '#!/bin/sh' > /start.sh \
     && echo '    exit 1' >> /start.sh \
     && echo 'fi' >> /start.sh \
     && echo 'echo "✓ Nginx config is valid"' >> /start.sh \
+    && echo 'echo "Showing final config:"' >> /start.sh \
+    && echo 'grep "listen" /etc/nginx/http.d/default.conf' >> /start.sh \
+    && echo 'grep "location.*health" /etc/nginx/http.d/default.conf' >> /start.sh \
     && echo 'echo ""' >> /start.sh \
     && echo '' >> /start.sh \
     && echo 'echo "Starting services..."' >> /start.sh \
     && echo 'echo "- Nginx will listen on 0.0.0.0:$PORT"' >> /start.sh \
     && echo 'echo "- PHP-FPM will listen on 127.0.0.1:9000"' >> /start.sh \
-    && echo 'echo "- Health check available at /health"' >> /start.sh \
+    && echo 'echo "- Health check available at http://0.0.0.0:$PORT/health"' >> /start.sh \
     && echo 'echo ""' >> /start.sh \
     && echo '' >> /start.sh \
     && echo 'cd /var/www/html' >> /start.sh \
