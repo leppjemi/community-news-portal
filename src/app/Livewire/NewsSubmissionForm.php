@@ -71,37 +71,37 @@ class NewsSubmissionForm extends Component
         // Check if URL is accessible and is an image
         try {
             $headers = @get_headers($this->cover_image, 1);
-            
+
             if ($headers === false) {
                 $this->image_validation_message = 'Cannot access this URL. Please check if it\'s correct.';
                 return;
             }
 
             $statusCode = is_array($headers[0]) ? $headers[0][0] : $headers[0];
-            
+
             if (strpos($statusCode, '200') === false) {
-                $this->image_validation_message = 'Image not found at this URL (HTTP ' . $statusCode . ').';
+                $this->image_validation_message = 'Image not found at this URL (HTTP '.$statusCode.').';
                 return;
             }
 
             // Check content type
-            $contentType = is_array($headers['Content-Type'] ?? null) 
-                ? $headers['Content-Type'][0] 
+            $contentType = is_array($headers['Content-Type'] ?? null)
+                ? $headers['Content-Type'][0]
                 : ($headers['Content-Type'] ?? '');
 
             $imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-            
+
             if (!empty($contentType) && !in_array(strtolower($contentType), $imageTypes) && !str_contains(strtolower($contentType), 'image/')) {
-                $this->image_validation_message = 'This URL does not point to an image. Content type: ' . $contentType;
+                $this->image_validation_message = 'This URL does not point to an image. Content type: '.$contentType;
                 return;
             }
 
             // If we get here, the image is valid
             $this->image_preview_url = $this->cover_image;
             $this->image_validation_message = 'Image loaded successfully! ✓';
-            
+
         } catch (\Exception $e) {
-            $this->image_validation_message = 'Error validating image: ' . $e->getMessage();
+            $this->image_validation_message = 'Error validating image: '.$e->getMessage();
         }
     }
 
@@ -109,7 +109,7 @@ class NewsSubmissionForm extends Component
     {
         // Custom validation for cover_image URL
         $rules = $this->rules;
-        
+
         if (!empty($this->cover_image)) {
             // Validate URL format
             if (!filter_var($this->cover_image, FILTER_VALIDATE_URL)) {
@@ -138,20 +138,20 @@ class NewsSubmissionForm extends Component
                             'ignore_errors' => true,
                         ],
                     ]);
-                    
+
                     $headers = @get_headers($this->cover_image, 1, $context);
-                    
+
                     if ($headers !== false) {
                         $statusCode = is_array($headers[0]) ? $headers[0][0] : $headers[0];
-                        
+
                         // If we get a 200 response, check content type
                         if (strpos($statusCode, '200') !== false) {
-                            $contentType = is_array($headers['Content-Type'] ?? null) 
-                                ? $headers['Content-Type'][0] 
+                            $contentType = is_array($headers['Content-Type'] ?? null)
+                                ? $headers['Content-Type'][0]
                                 : ($headers['Content-Type'] ?? '');
 
                             $imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-                            
+
                             // If content type is available and not an image, reject it
                             if (!empty($contentType) && !in_array(strtolower($contentType), $imageTypes) && !str_contains(strtolower($contentType), 'image/')) {
                                 $this->addError('cover_image', 'This URL does not point to a valid image file.');

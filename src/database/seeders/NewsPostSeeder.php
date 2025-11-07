@@ -17,7 +17,7 @@ class NewsPostSeeder extends Seeder
     {
         // Get first user and all categories
         $user = User::first();
-        if (! $user) {
+        if (!$user) {
             $this->command->error('No users found. Please run UserSeeder first.');
 
             return;
@@ -49,7 +49,7 @@ class NewsPostSeeder extends Seeder
                 $slug = $baseSlug;
                 $counter = 1;
                 while (NewsPost::where('slug', $slug)->exists()) {
-                    $slug = $baseSlug.'-'.$counter;
+                    $slug = $baseSlug . '-' . $counter;
                     $counter++;
                 }
 
@@ -84,7 +84,7 @@ class NewsPostSeeder extends Seeder
      */
     private function determineCategory(string $title, string $content, $categories, array $categoryMap): Category
     {
-        $text = strtolower($title.' '.$content);
+        $text = strtolower($title . ' ' . $content);
 
         foreach ($categoryMap as $categoryName => $keywords) {
             foreach ($keywords as $keyword) {
