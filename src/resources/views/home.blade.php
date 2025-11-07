@@ -61,9 +61,10 @@
             @if($post->cover_image)
                 <figure class="relative overflow-hidden">
                     <img 
-                        src="{{ Storage::url($post->cover_image) }}" 
+                        src="{{ $post->cover_image_url }}" 
                         alt="{{ $post->title }}" 
-                        class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300">
+                        class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
                     <div class="absolute top-4 right-4">
                         <div class="badge badge-primary badge-lg shadow-lg">{{ $post->category->name }}</div>
                     </div>

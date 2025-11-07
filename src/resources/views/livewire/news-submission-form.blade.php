@@ -51,7 +51,7 @@
 
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text font-semibold text-lg">Cover Image</span>
+                    <span class="label-text font-semibold text-lg">Cover Image URL</span>
                     <span class="label-text-alt">Optional</span>
                 </label>
                 
@@ -60,10 +60,10 @@
                         <div class="card bg-base-200 shadow-sm">
                             <div class="card-body p-4">
                                 <div class="flex items-center gap-4">
-                                    <img src="{{ Storage::url($existing_image) }}" alt="Current image" class="w-32 h-32 object-cover rounded-lg">
+                                    <img src="{{ str_starts_with($existing_image, 'http') ? $existing_image : Storage::url($existing_image) }}" alt="Current image" class="w-32 h-32 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/128x128?text=Image+Not+Found'">
                                     <div>
                                         <p class="font-medium">Current Image</p>
-                                        <p class="text-sm text-base-content/70">Upload a new image to replace</p>
+                                        <p class="text-sm text-base-content/70">Enter a new image URL to replace</p>
                                     </div>
                                 </div>
                             </div>
@@ -71,11 +71,24 @@
                     </div>
                 @endif
                 
-                <input 
-                    type="file" 
-                    wire:model="cover_image" 
-                    accept="image/*" 
-                    class="file-input file-input-bordered w-full focus:outline-none focus:ring-2 focus:ring-primary @error('cover_image') file-input-error @enderror">
+                <div class="flex gap-2">
+                    <input 
+                        type="url" 
+                        wire:model="cover_image" 
+                        placeholder="https://example.com/image.jpg"
+                        class="input input-bordered flex-1 focus:outline-none focus:ring-2 focus:ring-primary @error('cover_image') input-error @enderror">
+                    <button 
+                        type="button"
+                        wire:click="testImage"
+                        wire:loading.attr="disabled"
+                        class="btn btn-outline btn-primary"
+                        @if(empty($cover_image)) disabled @endif>
+                        <span wire:loading.remove wire:target="testImage">Test Image</span>
+                        <span wire:loading wire:target="testImage" class="flex items-center">
+                            <span class="loading loading-spinner loading-sm"></span>
+                        </span>
+                    </button>
+                </div>
                 
                 @error('cover_image') 
                     <label class="label">
@@ -83,12 +96,20 @@
                     </label> 
                 @enderror
                 
-                @if($cover_image)
+                @if($image_validation_message)
+                    <div class="mt-2">
+                        <div class="alert @if(str_contains($image_validation_message, 'successfully')) alert-success @else alert-warning @endif">
+                            <span>{{ $image_validation_message }}</span>
+                        </div>
+                    </div>
+                @endif
+                
+                @if($image_preview_url)
                     <div class="mt-4">
                         <div class="card bg-base-200 shadow-sm">
                             <div class="card-body p-4">
                                 <div class="flex items-center gap-4">
-                                    <img src="{{ $cover_image->temporaryUrl() }}" alt="Preview" class="w-32 h-32 object-cover rounded-lg">
+                                    <img src="{{ $image_preview_url }}" alt="Preview" class="w-32 h-32 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/128x128?text=Image+Not+Found'">
                                     <div>
                                         <p class="font-medium">Image Preview</p>
                                         <p class="text-sm text-base-content/70">This will be your cover image</p>

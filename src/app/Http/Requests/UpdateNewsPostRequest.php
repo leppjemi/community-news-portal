@@ -29,7 +29,7 @@ class UpdateNewsPostRequest extends FormRequest
             'title' => 'required|string|max:255',
             'content' => 'required|string|min:50',
             'category_id' => 'required|exists:categories,id',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'cover_image' => 'nullable|url|max:2048',
         ];
     }
 }

@@ -8,7 +8,7 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="{{ request()->fullUrl() }}">
     @if($post->cover_image)
-        <meta property="og:image" content="{{ asset('storage/' . $post->cover_image) }}">
+        <meta property="og:image" content="{{ str_starts_with($post->cover_image, 'http') ? $post->cover_image : asset('storage/' . $post->cover_image) }}">
     @endif
 @endpush
 
@@ -19,9 +19,10 @@
         <div class="card bg-base-100 shadow-xl mb-6 overflow-hidden">
             <figure class="relative">
                 <img 
-                    src="{{ Storage::url($post->cover_image) }}" 
+                    src="{{ $post->cover_image_url }}" 
                     alt="{{ $post->title }}" 
-                    class="w-full h-64 lg:h-96 object-cover">
+                    class="w-full h-64 lg:h-96 object-cover"
+                    onerror="this.src='https://via.placeholder.com/800x400?text=Image+Not+Found'">
                 <div class="absolute top-4 left-4">
                     <div class="badge badge-primary badge-lg shadow-lg">{{ $post->category->name }}</div>
                 </div>

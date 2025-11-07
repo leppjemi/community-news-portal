@@ -1,38 +1,36 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.3-fpm
 
-RUN apk add --no-cache \
-    bash \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
     curl \
-    nano \
-    tzdata \
     libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
+    libonig-dev \
+    libxml2-dev \
     zip \
     unzip \
-    git \
-    oniguruma-dev \
-    libzip-dev \
     nodejs \
     npm \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl gd
+    && rm -rf /var/lib/apt/lists/*
 
-# Install composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Set working directory
 WORKDIR /var/www/html
 
-# Create storage and cache directories with proper permissions
-RUN mkdir -p storage/framework/{sessions,views,cache} \
-    && mkdir -p storage/app/public \
-    && mkdir -p bootstrap/cache \
-    && chown -R www-data:www-data /var/www \
-    && chmod -R 775 storage bootstrap/cache \
-    && chmod -R 755 /var/www
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+# Set user to www-data
+RUN chown -R www-data:www-data /var/www/html
+
+# Expose port 9000 for PHP-FPM
+EXPOSE 9000
+
+# Use entrypoint script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

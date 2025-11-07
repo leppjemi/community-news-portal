@@ -165,23 +165,26 @@ class SocialShareClickSeeder extends Seeder
         $now = now();
 
         // Calculate days since publication
-        $daysSincePublication = $base->diffInDays($now);
+        $daysSincePublication = (int) $base->diffInDays($now);
 
         // If published in the future or very recently, use current time as max
-        $maxDays = min(30, max(0, $daysSincePublication));
+        $maxDays = (int) min(30, max(0, $daysSincePublication));
 
         // Weight: 40% chance in first 3 days, 30% in days 4-7, 20% in days 8-14, 10% in days 15-30
         $random = rand(1, 100);
 
         if ($random <= 40) {
-            $daysAfter = min(rand(0, 3), $maxDays);
+            $daysAfter = (int) min(rand(0, 3), $maxDays);
         } elseif ($random <= 70) {
-            $daysAfter = min(rand(4, 7), $maxDays);
+            $daysAfter = (int) min(rand(4, 7), $maxDays);
         } elseif ($random <= 90) {
-            $daysAfter = min(rand(8, 14), $maxDays);
+            $daysAfter = (int) min(rand(8, 14), $maxDays);
         } else {
-            $daysAfter = min(rand(15, 30), $maxDays);
+            $daysAfter = (int) min(rand(15, 30), $maxDays);
         }
+
+        // Ensure daysAfter is not negative
+        $daysAfter = max(0, $daysAfter);
 
         $hoursAgo = rand(0, 23);
         $minutesAgo = rand(0, 59);

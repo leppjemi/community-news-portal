@@ -6,8 +6,6 @@ use App\Models\Category;
 use App\Models\NewsPost;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -20,14 +18,15 @@ class NewsSubmissionTest extends TestCase
         $user = User::factory()->create(['role' => 'user']);
         $category = Category::factory()->create();
 
-        Storage::fake('public');
+        // Use a publicly accessible test image URL
+        $testImageUrl = 'https://via.placeholder.com/400x300.jpg';
 
         Livewire::actingAs($user)
             ->test(\App\Livewire\NewsSubmissionForm::class)
             ->set('title', 'Test News Title')
             ->set('content', 'This is a test news content that is long enough to pass validation.')
             ->set('category_id', $category->id)
-            ->set('cover_image', UploadedFile::fake()->image('news.jpg'))
+            ->set('cover_image', $testImageUrl)
             ->call('save')
             ->assertRedirect(route('my-submissions'));
 
@@ -35,6 +34,7 @@ class NewsSubmissionTest extends TestCase
             'title' => 'Test News Title',
             'user_id' => $user->id,
             'status' => 'pending',
+            'cover_image' => $testImageUrl,
         ]);
     }
 

@@ -6,9 +6,10 @@
                     @if($post->cover_image)
                         <div class="flex-shrink-0">
                             <img 
-                                src="{{ Storage::url($post->cover_image) }}" 
+                                src="{{ $post->cover_image_url }}" 
                                 alt="{{ $post->title }}" 
-                                class="w-full lg:w-48 h-48 object-cover rounded-lg">
+                                class="w-full lg:w-48 h-48 object-cover rounded-lg"
+                                onerror="this.src='https://via.placeholder.com/192x192?text=Image+Not+Found'">
                         </div>
                     @endif
                     <div class="flex-1">

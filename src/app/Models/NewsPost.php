@@ -96,4 +96,22 @@ class NewsPost extends Model
     {
         return $this->status === 'approved' || $this->isPublished();
     }
+
+    /**
+     * Get the cover image URL (handles both URLs and storage paths).
+     */
+    public function getCoverImageUrlAttribute(): ?string
+    {
+        if (empty($this->cover_image)) {
+            return null;
+        }
+
+        // If it's already a URL (starts with http), return as is
+        if (str_starts_with($this->cover_image, 'http://') || str_starts_with($this->cover_image, 'https://')) {
+            return $this->cover_image;
+        }
+
+        // Otherwise, it's a storage path
+        return \Illuminate\Support\Facades\Storage::url($this->cover_image);
+    }
 }
