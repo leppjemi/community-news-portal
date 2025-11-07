@@ -68,6 +68,7 @@ RUN echo 'server {' > /etc/nginx/http.d/default.conf.template \
 # Copy supervisor configuration
 RUN echo '[supervisord]' > /etc/supervisord.conf \
     && echo 'nodaemon=true' >> /etc/supervisord.conf \
+    && echo 'user=root' >> /etc/supervisord.conf \
     && echo '' >> /etc/supervisord.conf \
     && echo '[program:php-fpm]' >> /etc/supervisord.conf \
     && echo 'command=php-fpm' >> /etc/supervisord.conf \

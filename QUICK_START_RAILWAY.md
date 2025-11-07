@@ -27,7 +27,7 @@ In Railway project → **Variables**, add:
 APP_NAME="Community News Portal"
 APP_ENV=production
 APP_DEBUG=false
-APP_KEY=                    # Generate: php artisan key:generate --show
+APP_KEY=base64:v0ZMjx+sruecz7smNjk4mcdqzIOLEf1MUEuiEgFur2U=  # Generated key (or run: docker compose exec app php artisan key:generate --show)
 APP_URL=                    # Will be auto-set by Railway
 
 # Database (auto-provided by Railway MySQL service)
@@ -39,8 +39,12 @@ CACHE_DRIVER=database
 QUEUE_CONNECTION=database
 ```
 
-**To get APP_KEY:**
+**To generate APP_KEY (if you need a new one):**
 ```bash
+# Using Docker (recommended)
+docker compose exec app php artisan key:generate --show
+
+# Or if you have PHP installed locally
 cd src
 php artisan key:generate --show
 ```
