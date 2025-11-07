@@ -122,18 +122,21 @@ RUN echo '#!/bin/sh' > /start.sh \
     && echo 'echo "=== Starting Laravel Application ==="' >> /start.sh \
     && echo 'echo "Configuring Nginx for port $PORT..."' >> /start.sh \
     && echo 'sed "s/PORT_PLACEHOLDER/$PORT/" /etc/nginx/http.d/default.conf.template > /etc/nginx/http.d/default.conf || true' >> /start.sh \
-    && echo 'echo "Nginx config created"' >> /start.sh \
+    && echo 'echo "Nginx config created, listening on port $PORT"' >> /start.sh \
+    && echo 'echo "Verifying Nginx config:"' >> /start.sh \
+    && echo 'grep "listen" /etc/nginx/http.d/default.conf || echo "ERROR: Nginx config missing listen directive!"' >> /start.sh \
     && echo 'cd /var/www/html' >> /start.sh \
     && echo 'echo "Running Laravel initialization..."' >> /start.sh \
     && echo '/usr/local/bin/init-app.sh || echo "Warning: Initialization had errors, but continuing..."' >> /start.sh \
     && echo 'echo "Verifying PHP-FPM configuration..."' >> /start.sh \
     && echo 'grep "listen = 127.0.0.1:9000" /usr/local/etc/php-fpm.d/zz-railway.conf || echo "WARNING: PHP-FPM not configured for TCP!"' >> /start.sh \
-    && echo 'echo "Verifying Nginx can connect to PHP-FPM..."' >> /start.sh \
-    && echo 'netstat -tlnp | grep :9000 || echo "WARNING: Port 9000 not listening!"' >> /start.sh \
     && echo 'echo "Starting services (Nginx + PHP-FPM)..."' >> /start.sh \
+    && echo 'echo "Nginx will listen on port $PORT"' >> /start.sh \
+    && echo 'echo "PHP-FPM will listen on 127.0.0.1:9000"' >> /start.sh \
     && echo 'exec /usr/bin/supervisord -c /etc/supervisord.conf' >> /start.sh \
     && chmod +x /start.sh
 
 # Start supervisor
-CMD ["/start.sh"]
+# Use shell form to ensure environment variables are available
+CMD ["/bin/sh", "/start.sh"]
 
