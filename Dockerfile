@@ -43,11 +43,16 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
+# Configure PHP-FPM to listen on TCP port 9000
+RUN sed -i 's/listen = .*/listen = 127.0.0.1:9000/' /usr/local/etc/php-fpm.d/www.conf || \
+    echo 'listen = 127.0.0.1:9000' >> /usr/local/etc/php-fpm.d/www.conf
+
 # Create Nginx configuration template (PORT will be substituted at runtime)
 RUN echo 'server {' > /etc/nginx/http.d/default.conf.template \
     && echo '    listen PORT_PLACEHOLDER;' >> /etc/nginx/http.d/default.conf.template \
     && echo '    index index.php index.html;' >> /etc/nginx/http.d/default.conf.template \
     && echo '    root /var/www/html/public;' >> /etc/nginx/http.d/default.conf.template \
+    && echo '    server_name _;' >> /etc/nginx/http.d/default.conf.template \
     && echo '' >> /etc/nginx/http.d/default.conf.template \
     && echo '    location / {' >> /etc/nginx/http.d/default.conf.template \
     && echo '        try_files $uri $uri/ /index.php?$query_string;' >> /etc/nginx/http.d/default.conf.template \
@@ -58,6 +63,7 @@ RUN echo 'server {' > /etc/nginx/http.d/default.conf.template \
     && echo '        fastcgi_index index.php;' >> /etc/nginx/http.d/default.conf.template \
     && echo '        include fastcgi_params;' >> /etc/nginx/http.d/default.conf.template \
     && echo '        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;' >> /etc/nginx/http.d/default.conf.template \
+    && echo '        fastcgi_param PATH_INFO $fastcgi_path_info;' >> /etc/nginx/http.d/default.conf.template \
     && echo '    }' >> /etc/nginx/http.d/default.conf.template \
     && echo '' >> /etc/nginx/http.d/default.conf.template \
     && echo '    location ~ /\.ht {' >> /etc/nginx/http.d/default.conf.template \
