@@ -17,7 +17,7 @@ class NewsPostSeeder extends Seeder
     {
         // Get first user and all categories
         $user = User::first();
-        if (!$user) {
+        if (! $user) {
             $this->command->error('No users found. Please run UserSeeder first.');
 
             return;
