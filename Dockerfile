@@ -18,6 +18,8 @@ RUN apk add --no-cache \
     npm \
     nginx \
     supervisor \
+    net-tools \
+    iproute2 \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl gd opcache
 
@@ -100,6 +102,7 @@ RUN echo 'server {' > /etc/nginx/http.d/default.conf.template \
 RUN echo '[supervisord]' > /etc/supervisord.conf \
     && echo 'nodaemon=true' >> /etc/supervisord.conf \
     && echo 'user=root' >> /etc/supervisord.conf \
+    && echo 'environment=PORT="%(ENV_PORT)s"' >> /etc/supervisord.conf \
     && echo '' >> /etc/supervisord.conf \
     && echo '[program:php-fpm]' >> /etc/supervisord.conf \
     && echo 'command=php-fpm -F' >> /etc/supervisord.conf \
@@ -122,7 +125,8 @@ RUN echo '[supervisord]' > /etc/supervisord.conf \
     && echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf \
     && echo '' >> /etc/supervisord.conf \
     && echo '[program:verify-nginx]' >> /etc/supervisord.conf \
-    && echo 'command=/bin/sh -c "sleep 3 && PORT=${PORT:-80} && echo \"Verifying Nginx health endpoint...\" && curl -f http://localhost:$PORT/health && echo \"✓ Health endpoint is working!\" || echo \"✗ Health endpoint failed\""' >> /etc/supervisord.conf \
+    && echo 'environment=PORT="%(ENV_PORT)s"' >> /etc/supervisord.conf \
+    && echo 'command=/bin/sh -c "sleep 5 && PORT=${PORT:-80} && echo \"=== Verifying Nginx ===\" && echo \"PORT: $PORT\" && echo \"Checking if Nginx is listening on port $PORT...\" && (netstat -tlnp 2>/dev/null | grep \":$PORT\" || ss -tlnp 2>/dev/null | grep \":$PORT\" || echo \"Port check: no match found\") && echo \"Testing health endpoint at http://127.0.0.1:$PORT/health...\" && curl -v -f http://127.0.0.1:$PORT/health 2>&1 && echo \"✓ Health endpoint is working!\" || (echo \"✗ Health endpoint failed\" && echo \"Checking Nginx config...\" && cat /etc/nginx/http.d/default.conf 2>/dev/null | head -30 || echo \"Config file not found\")"' >> /etc/supervisord.conf \
     && echo 'autostart=true' >> /etc/supervisord.conf \
     && echo 'autorestart=false' >> /etc/supervisord.conf \
     && echo 'priority=8' >> /etc/supervisord.conf \
@@ -159,45 +163,53 @@ RUN echo '#!/bin/sh' > /start.sh \
     && echo '# Get PORT from environment or default to 80' >> /start.sh \
     && echo 'PORT=${PORT:-80}' >> /start.sh \
     && echo '' >> /start.sh \
-    && echo 'echo "==================================="' >> /start.sh \
-    && echo 'echo "Starting Laravel Application"' >> /start.sh \
-    && echo 'echo "==================================="' >> /start.sh \
-    && echo 'echo "PORT: $PORT"' >> /start.sh \
-    && echo 'echo ""' >> /start.sh \
+    && echo 'echo "===================================" >&2' >> /start.sh \
+    && echo 'echo "Starting Laravel Application" >&2' >> /start.sh \
+    && echo 'echo "===================================" >&2' >> /start.sh \
+    && echo 'echo "PORT: $PORT" >&2' >> /start.sh \
+    && echo 'echo "" >&2' >> /start.sh \
     && echo '' >> /start.sh \
     && echo '# Remove any existing nginx configs' >> /start.sh \
     && echo 'rm -f /etc/nginx/http.d/*.conf /etc/nginx/conf.d/*.conf 2>/dev/null || true' >> /start.sh \
     && echo '' >> /start.sh \
     && echo '# Configure Nginx with the correct port' >> /start.sh \
-    && echo 'echo "Configuring Nginx to listen on 0.0.0.0:$PORT..."' >> /start.sh \
+    && echo 'echo "Configuring Nginx to listen on 0.0.0.0:$PORT..." >&2' >> /start.sh \
     && echo 'sed "s/PORT_PLACEHOLDER/$PORT/" /etc/nginx/http.d/default.conf.template > /etc/nginx/http.d/default.conf' >> /start.sh \
     && echo 'if [ $? -ne 0 ]; then' >> /start.sh \
     && echo '    echo "ERROR: Failed to create Nginx config!" >&2' >> /start.sh \
     && echo '    exit 1' >> /start.sh \
     && echo 'fi' >> /start.sh \
-    && echo 'echo "✓ Nginx config created"' >> /start.sh \
-    && echo 'echo "Config file location: /etc/nginx/http.d/default.conf"' >> /start.sh \
+    && echo 'echo "✓ Nginx config created" >&2' >> /start.sh \
+    && echo 'echo "Config file location: /etc/nginx/http.d/default.conf" >&2' >> /start.sh \
+    && echo '' >> /start.sh \
+    && echo '# Verify config file exists and has correct content' >> /start.sh \
+    && echo 'if [ ! -f /etc/nginx/http.d/default.conf ]; then' >> /start.sh \
+    && echo '    echo "ERROR: Nginx config file does not exist!" >&2' >> /start.sh \
+    && echo '    exit 1' >> /start.sh \
+    && echo 'fi' >> /start.sh \
+    && echo 'echo "Config file exists, showing listen directive:" >&2' >> /start.sh \
+    && echo 'grep "listen" /etc/nginx/http.d/default.conf >&2' >> /start.sh \
     && echo '' >> /start.sh \
     && echo '# Test Nginx configuration' >> /start.sh \
-    && echo 'echo "Testing Nginx configuration..."' >> /start.sh \
-    && echo 'nginx -t 2>&1' >> /start.sh \
+    && echo 'echo "Testing Nginx configuration..." >&2' >> /start.sh \
+    && echo 'nginx -t >&2' >> /start.sh \
     && echo 'if [ $? -ne 0 ]; then' >> /start.sh \
     && echo '    echo "ERROR: Nginx config test failed!" >&2' >> /start.sh \
     && echo '    echo "Config contents:" >&2' >> /start.sh \
     && echo '    cat /etc/nginx/http.d/default.conf >&2' >> /start.sh \
     && echo '    exit 1' >> /start.sh \
     && echo 'fi' >> /start.sh \
-    && echo 'echo "✓ Nginx config is valid"' >> /start.sh \
-    && echo 'echo "Showing final config:"' >> /start.sh \
-    && echo 'grep "listen" /etc/nginx/http.d/default.conf' >> /start.sh \
-    && echo 'grep "location.*health" /etc/nginx/http.d/default.conf' >> /start.sh \
-    && echo 'echo ""' >> /start.sh \
+    && echo 'echo "✓ Nginx config is valid" >&2' >> /start.sh \
+    && echo 'echo "Final config summary:" >&2' >> /start.sh \
+    && echo 'grep "listen" /etc/nginx/http.d/default.conf >&2' >> /start.sh \
+    && echo 'grep "location.*health" /etc/nginx/http.d/default.conf >&2' >> /start.sh \
+    && echo 'echo "" >&2' >> /start.sh \
     && echo '' >> /start.sh \
-    && echo 'echo "Starting services..."' >> /start.sh \
-    && echo 'echo "- Nginx will listen on 0.0.0.0:$PORT"' >> /start.sh \
-    && echo 'echo "- PHP-FPM will listen on 127.0.0.1:9000"' >> /start.sh \
-    && echo 'echo "- Health check available at http://0.0.0.0:$PORT/health"' >> /start.sh \
-    && echo 'echo ""' >> /start.sh \
+    && echo 'echo "Starting services..." >&2' >> /start.sh \
+    && echo 'echo "- Nginx will listen on 0.0.0.0:$PORT" >&2' >> /start.sh \
+    && echo 'echo "- PHP-FPM will listen on 127.0.0.1:9000" >&2' >> /start.sh \
+    && echo 'echo "- Health check available at http://0.0.0.0:$PORT/health" >&2' >> /start.sh \
+    && echo 'echo "" >&2' >> /start.sh \
     && echo '' >> /start.sh \
     && echo 'cd /var/www/html' >> /start.sh \
     && echo '' >> /start.sh \
