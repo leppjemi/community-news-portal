@@ -64,7 +64,7 @@ RUN echo '[www]' > /usr/local/etc/php-fpm.d/zz-railway.conf \
 
 # Create Nginx configuration template (PORT will be substituted at runtime)
 RUN echo 'server {' > /etc/nginx/http.d/default.conf.template \
-    && echo '    listen PORT_PLACEHOLDER;' >> /etc/nginx/http.d/default.conf.template \
+    && echo '    listen 0.0.0.0:PORT_PLACEHOLDER;' >> /etc/nginx/http.d/default.conf.template \
     && echo '    server_name _;' >> /etc/nginx/http.d/default.conf.template \
     && echo '    index index.php index.html;' >> /etc/nginx/http.d/default.conf.template \
     && echo '    root /var/www/html/public;' >> /etc/nginx/http.d/default.conf.template \
@@ -139,12 +139,15 @@ RUN chmod +x /usr/local/bin/init-app.sh
 
 # Create startup script
 RUN echo '#!/bin/sh' > /start.sh \
-    && echo 'set -x' >> /start.sh \
     && echo 'PORT=${PORT:-80}' >> /start.sh \
     && echo 'echo "=== Starting Laravel Application ===" >&2' >> /start.sh \
+    && echo 'echo "PORT environment variable: $PORT" >&2' >> /start.sh \
     && echo 'echo "Configuring Nginx for port $PORT..." >&2' >> /start.sh \
-    && echo 'sed "s/PORT_PLACEHOLDER/$PORT/" /etc/nginx/http.d/default.conf.template > /etc/nginx/http.d/default.conf || true' >> /start.sh \
-    && echo 'echo "Nginx config created, listening on port $PORT" >&2' >> /start.sh \
+    && echo 'sed "s/PORT_PLACEHOLDER/$PORT/" /etc/nginx/http.d/default.conf.template > /etc/nginx/http.d/default.conf || (echo "ERROR: Failed to create Nginx config!" >&2 && exit 1)' >> /start.sh \
+    && echo 'echo "Nginx config created" >&2' >> /start.sh \
+    && echo 'echo "Verifying Nginx config syntax..." >&2' >> /start.sh \
+    && echo 'nginx -t 2>&1 || (echo "ERROR: Nginx config test failed!" >&2 && echo "Config contents:" >&2 && cat /etc/nginx/http.d/default.conf >&2 && exit 1)' >> /start.sh \
+    && echo 'echo "Nginx config is valid, will listen on 0.0.0.0:$PORT" >&2' >> /start.sh \
     && echo 'cd /var/www/html' >> /start.sh \
     && echo 'echo "Starting services immediately (Nginx + PHP-FPM)..." >&2' >> /start.sh \
     && echo 'echo "Laravel initialization will run in background after services start" >&2' >> /start.sh \
