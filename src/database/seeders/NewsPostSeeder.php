@@ -17,7 +17,7 @@ class NewsPostSeeder extends Seeder
     {
         // Get first user and all categories
         $user = User::first();
-        if (!$user) {
+        if (! $user) {
             $this->command->error('No users found. Please run UserSeeder first.');
 
             return;
@@ -72,7 +72,7 @@ class NewsPostSeeder extends Seeder
                 $created++;
                 $this->command->info("Created article: {$article['title']}");
             } catch (\Exception $e) {
-                $this->command->error("Failed to create article '{$article['title']}': ".$e->getMessage());
+                $this->command->error("Failed to create article '{$article['title']}': " . $e->getMessage());
             }
         }
 
