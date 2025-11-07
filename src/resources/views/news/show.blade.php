@@ -39,11 +39,6 @@
     <div class="card bg-base-100 shadow-xl mb-6">
         <div class="card-body">
             <div class="flex flex-wrap items-center gap-4 mb-4">
-                <div class="avatar placeholder">
-                    <div class="bg-neutral text-neutral-content rounded-full w-12">
-                        <span class="text-lg">{{ substr($post->user->name, 0, 1) }}</span>
-                    </div>
-                </div>
                 <div>
                     <div class="font-semibold">{{ $post->user->name }}</div>
                     <div class="text-sm text-base-content/60 flex items-center gap-2">

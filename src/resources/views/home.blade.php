@@ -134,10 +134,8 @@
 
 <!-- Pagination -->
 @if($posts->hasPages())
-    <div class="flex justify-center mt-8">
-        <div class="join">
-            {{ $posts->links() }}
-        </div>
+    <div class="mt-8">
+        {{ $posts->links() }}
     </div>
 @endif
 @endsection

@@ -49,11 +49,12 @@ class SocialShareClick extends Model
      */
     public function scopeByDateRange(Builder $query, ?string $startDate = null, ?string $endDate = null): Builder
     {
+        $tableName = (new static)->getTable();
         if ($startDate) {
-            $query->whereDate('created_at', '>=', $startDate);
+            $query->whereDate($tableName . '.created_at', '>=', $startDate);
         }
         if ($endDate) {
-            $query->whereDate('created_at', '<=', $endDate);
+            $query->whereDate($tableName . '.created_at', '<=', $endDate);
         }
         return $query;
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TrackSocialShareRequest;
+use App\Models\Category;
 use App\Models\SocialShareClick;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,9 +49,10 @@ class SocialShareController extends Controller
         $endDate = $request->input('end_date');
         $platform = $request->input('platform');
         $pageType = $request->input('page_type');
+        $categoryId = $request->input('category_id');
 
         // Build base query with filters (reused for all queries)
-        $baseQuery = function ($query) use ($startDate, $endDate, $platform, $pageType) {
+        $baseQuery = function ($query) use ($startDate, $endDate, $platform, $pageType, $categoryId) {
             if ($startDate) {
                 $query->byDateRange($startDate, null);
             }
@@ -62,6 +64,11 @@ class SocialShareController extends Controller
             }
             if ($pageType && $pageType !== 'all') {
                 $query->byPageType($pageType);
+            }
+            if ($categoryId && $categoryId !== 'all') {
+                $query->whereHas('newsPost', function ($q) use ($categoryId) {
+                    $q->where('category_id', $categoryId);
+                });
             }
         };
 
@@ -85,7 +92,7 @@ class SocialShareController extends Controller
         $sharesOverTimeQuery = SocialShareClick::query();
         $baseQuery($sharesOverTimeQuery);
         $sharesOverTime = $sharesOverTimeQuery
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
+            ->select(DB::raw('DATE(social_share_clicks.created_at) as date'), DB::raw('count(*) as count'))
             ->groupBy('date')
             ->orderBy('date')
             ->get()
@@ -94,15 +101,24 @@ class SocialShareController extends Controller
             })
             ->toArray();
 
-        // Get top shared pages
+        // Get top shared pages with news post details
         $topPagesQuery = SocialShareClick::query();
         $baseQuery($topPagesQuery);
         $topPages = $topPagesQuery
-            ->select('page_url', DB::raw('count(*) as share_count'))
-            ->groupBy('page_url')
+            ->select('page_url', 'news_post_id', DB::raw('count(*) as share_count'))
+            ->with(['newsPost:id,title,category_id', 'newsPost.category:id,name'])
+            ->groupBy('page_url', 'news_post_id')
             ->orderByDesc('share_count')
-            ->limit(10)
-            ->get();
+            ->limit(20)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'page_url' => $item->page_url,
+                    'share_count' => $item->share_count,
+                    'title' => $item->newsPost ? $item->newsPost->title : 'Home Page',
+                    'category' => $item->newsPost && $item->newsPost->category ? $item->newsPost->category->name : null,
+                ];
+            });
 
         // Get shares by page type
         $sharesByPageTypeQuery = SocialShareClick::query();
@@ -114,16 +130,135 @@ class SocialShareController extends Controller
             ->pluck('count', 'page_type')
             ->toArray();
 
+        // Get shares by category
+        $sharesByCategoryQuery = SocialShareClick::query();
+        // Apply date filters manually with table prefix before joins
+        if ($startDate) {
+            $sharesByCategoryQuery->whereDate('social_share_clicks.created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $sharesByCategoryQuery->whereDate('social_share_clicks.created_at', '<=', $endDate);
+        }
+        if ($platform && $platform !== 'all') {
+            $sharesByCategoryQuery->where('social_share_clicks.platform', $platform);
+        }
+        if ($pageType && $pageType !== 'all') {
+            $sharesByCategoryQuery->where('social_share_clicks.page_type', $pageType);
+        }
+        if ($categoryId && $categoryId !== 'all') {
+            $sharesByCategoryQuery->whereHas('newsPost', function ($q) use ($categoryId) {
+                $q->where('category_id', $categoryId);
+            });
+        }
+        $sharesByCategory = $sharesByCategoryQuery
+            ->whereNotNull('news_post_id')
+            ->join('news_posts', 'social_share_clicks.news_post_id', '=', 'news_posts.id')
+            ->join('categories', 'news_posts.category_id', '=', 'categories.id')
+            ->select('categories.name as category_name', DB::raw('count(*) as count'))
+            ->groupBy('categories.id', 'categories.name')
+            ->orderByDesc('count')
+            ->get()
+            ->pluck('count', 'category_name')
+            ->toArray();
+
+        // Pivot: Platform vs Category
+        $platformCategoryPivotQuery = SocialShareClick::query();
+        // Apply date filters manually with table prefix before joins
+        if ($startDate) {
+            $platformCategoryPivotQuery->whereDate('social_share_clicks.created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $platformCategoryPivotQuery->whereDate('social_share_clicks.created_at', '<=', $endDate);
+        }
+        if ($platform && $platform !== 'all') {
+            $platformCategoryPivotQuery->where('social_share_clicks.platform', $platform);
+        }
+        if ($pageType && $pageType !== 'all') {
+            $platformCategoryPivotQuery->where('social_share_clicks.page_type', $pageType);
+        }
+        if ($categoryId && $categoryId !== 'all') {
+            $platformCategoryPivotQuery->whereHas('newsPost', function ($q) use ($categoryId) {
+                $q->where('category_id', $categoryId);
+            });
+        }
+        $platformCategoryPivot = $platformCategoryPivotQuery
+            ->whereNotNull('news_post_id')
+            ->join('news_posts', 'social_share_clicks.news_post_id', '=', 'news_posts.id')
+            ->join('categories', 'news_posts.category_id', '=', 'categories.id')
+            ->select('social_share_clicks.platform', 'categories.name as category_name', DB::raw('count(*) as count'))
+            ->groupBy('social_share_clicks.platform', 'categories.id', 'categories.name')
+            ->get()
+            ->groupBy('platform')
+            ->map(function ($platformGroup) {
+                return $platformGroup->pluck('count', 'category_name')->toArray();
+            })
+            ->toArray();
+
+        // Pivot: Platform vs Page Type
+        $platformPageTypePivotQuery = SocialShareClick::query();
+        $baseQuery($platformPageTypePivotQuery);
+        $platformPageTypePivot = $platformPageTypePivotQuery
+            ->select('platform', 'page_type', DB::raw('count(*) as count'))
+            ->groupBy('platform', 'page_type')
+            ->get()
+            ->groupBy('platform')
+            ->map(function ($platformGroup) {
+                return $platformGroup->pluck('count', 'page_type')->toArray();
+            })
+            ->toArray();
+
+        // Pivot: Category vs Platform (reverse view)
+        $categoryPlatformPivotQuery = SocialShareClick::query();
+        // Apply date filters manually with table prefix before joins
+        if ($startDate) {
+            $categoryPlatformPivotQuery->whereDate('social_share_clicks.created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $categoryPlatformPivotQuery->whereDate('social_share_clicks.created_at', '<=', $endDate);
+        }
+        if ($platform && $platform !== 'all') {
+            $categoryPlatformPivotQuery->where('social_share_clicks.platform', $platform);
+        }
+        if ($pageType && $pageType !== 'all') {
+            $categoryPlatformPivotQuery->where('social_share_clicks.page_type', $pageType);
+        }
+        if ($categoryId && $categoryId !== 'all') {
+            $categoryPlatformPivotQuery->whereHas('newsPost', function ($q) use ($categoryId) {
+                $q->where('category_id', $categoryId);
+            });
+        }
+        $categoryPlatformPivot = $categoryPlatformPivotQuery
+            ->whereNotNull('news_post_id')
+            ->join('news_posts', 'social_share_clicks.news_post_id', '=', 'news_posts.id')
+            ->join('categories', 'news_posts.category_id', '=', 'categories.id')
+            ->select('categories.name as category_name', 'social_share_clicks.platform', DB::raw('count(*) as count'))
+            ->groupBy('categories.id', 'categories.name', 'social_share_clicks.platform')
+            ->get()
+            ->groupBy('category_name')
+            ->map(function ($categoryGroup) {
+                return $categoryGroup->pluck('count', 'platform')->toArray();
+            })
+            ->toArray();
+
+        // Get all categories for filter dropdown
+        $categories = Category::orderBy('name')->get();
+
         return view('admin.analytics', compact(
             'totalShares',
             'sharesByPlatform',
             'sharesOverTime',
             'topPages',
             'sharesByPageType',
+            'sharesByCategory',
+            'platformCategoryPivot',
+            'platformPageTypePivot',
+            'categoryPlatformPivot',
+            'categories',
             'startDate',
             'endDate',
             'platform',
-            'pageType'
+            'pageType',
+            'categoryId'
         ));
     }
 }

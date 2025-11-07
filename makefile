@@ -1,38 +1,44 @@
+# Variables
+DOCKER_COMPOSE = docker compose -f docker-compose.yml
+PHP_CONTAINER = app
+NGINX_CONTAINER = nginx
+DB_CONTAINER = db
+
 up:
-	docker compose up -d --build
+	$(DOCKER_COMPOSE) up -d 
 
 build:
-	docker compose build
+	$(DOCKER_COMPOSE) build
 
 down:
-	docker compose down
+	$(DOCKER_COMPOSE) down
 
 restart:
-	docker compose down && docker compose up -d --build
+	$(DOCKER_COMPOSE) down && $(DOCKER_COMPOSE) up -d --build
 
 composer-install:
-	docker compose exec app composer install
+	$(DOCKER_COMPOSE) exec $(PHP_CONTAINER) composer install
 
 npm-install:
-	docker compose exec app npm install
+	$(DOCKER_COMPOSE) exec $(PHP_CONTAINER) npm install
 
 npm-dev:
-	docker compose exec app npm run dev
+	$(DOCKER_COMPOSE) exec $(PHP_CONTAINER) npm run dev
 
 npm-build:
-	docker compose exec app npm run build
+	$(DOCKER_COMPOSE) exec $(PHP_CONTAINER) npm run build
 
 migrate:
-	docker compose exec app php artisan migrate
+	$(DOCKER_COMPOSE) exec $(PHP_CONTAINER) php artisan migrate
 
 artisan:
-	docker compose exec app php artisan $(cmd)
+	$(DOCKER_COMPOSE) exec $(PHP_CONTAINER) php artisan $(cmd)
 
 fix-permission:
-	docker compose exec app sh -c "mkdir -p storage/framework/{sessions,views,cache} storage/app/public bootstrap/cache && chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache"
+	$(DOCKER_COMPOSE) exec $(PHP_CONTAINER) sh -c "mkdir -p storage/framework/{sessions,views,cache} storage/app/public bootstrap/cache && chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache"
 
 seed:
-	docker compose exec app php artisan db:seed
+	$(DOCKER_COMPOSE) exec $(PHP_CONTAINER) php artisan db:seed
 
 test:
-	docker compose exec app php artisan test
+	$(DOCKER_COMPOSE) exec $(PHP_CONTAINER) php artisan test

@@ -10,11 +10,6 @@
             <h1 class="text-4xl lg:text-5xl font-bold mb-2">Welcome back, {{ $user->name }}!</h1>
             <p class="text-base-content/70 text-lg">Here's what's happening with your account</p>
         </div>
-        <div class="avatar placeholder">
-            <div class="bg-primary text-primary-content rounded-full w-16 lg:w-20">
-                <span class="text-2xl lg:text-3xl">{{ substr($user->name, 0, 1) }}</span>
-            </div>
-        </div>
     </div>
 </div>
 

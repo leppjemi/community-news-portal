@@ -103,7 +103,7 @@
     @endforelse
 
     @if($posts->hasPages())
-        <div class="mt-6 flex justify-center">
+        <div class="mt-6">
             {{ $posts->links() }}
         </div>
     @endif
