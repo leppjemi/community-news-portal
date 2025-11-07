@@ -95,6 +95,7 @@ RUN echo '[supervisord]' > /etc/supervisord.conf \
     && echo 'command=php-fpm -F' >> /etc/supervisord.conf \
     && echo 'autostart=true' >> /etc/supervisord.conf \
     && echo 'autorestart=true' >> /etc/supervisord.conf \
+    && echo 'priority=10' >> /etc/supervisord.conf \
     && echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf \
     && echo 'stderr_logfile_maxbytes=0' >> /etc/supervisord.conf \
     && echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf \
@@ -104,6 +105,19 @@ RUN echo '[supervisord]' > /etc/supervisord.conf \
     && echo 'command=nginx -g "daemon off;"' >> /etc/supervisord.conf \
     && echo 'autostart=true' >> /etc/supervisord.conf \
     && echo 'autorestart=true' >> /etc/supervisord.conf \
+    && echo 'priority=10' >> /etc/supervisord.conf \
+    && echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf \
+    && echo 'stderr_logfile_maxbytes=0' >> /etc/supervisord.conf \
+    && echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf \
+    && echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf \
+    && echo '' >> /etc/supervisord.conf \
+    && echo '[program:laravel-init]' >> /etc/supervisord.conf \
+    && echo 'command=/bin/sh -c "sleep 5 && cd /var/www/html && /usr/local/bin/init-app.sh || echo Warning: Initialization had errors"' >> /etc/supervisord.conf \
+    && echo 'autostart=true' >> /etc/supervisord.conf \
+    && echo 'autorestart=false' >> /etc/supervisord.conf \
+    && echo 'priority=5' >> /etc/supervisord.conf \
+    && echo 'startsecs=0' >> /etc/supervisord.conf \
+    && echo 'startretries=0' >> /etc/supervisord.conf \
     && echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf \
     && echo 'stderr_logfile_maxbytes=0' >> /etc/supervisord.conf \
     && echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf \
@@ -123,16 +137,9 @@ RUN echo '#!/bin/sh' > /start.sh \
     && echo 'echo "Configuring Nginx for port $PORT..."' >> /start.sh \
     && echo 'sed "s/PORT_PLACEHOLDER/$PORT/" /etc/nginx/http.d/default.conf.template > /etc/nginx/http.d/default.conf || true' >> /start.sh \
     && echo 'echo "Nginx config created, listening on port $PORT"' >> /start.sh \
-    && echo 'echo "Verifying Nginx config:"' >> /start.sh \
-    && echo 'grep "listen" /etc/nginx/http.d/default.conf || echo "ERROR: Nginx config missing listen directive!"' >> /start.sh \
     && echo 'cd /var/www/html' >> /start.sh \
-    && echo 'echo "Running Laravel initialization..."' >> /start.sh \
-    && echo '/usr/local/bin/init-app.sh || echo "Warning: Initialization had errors, but continuing..."' >> /start.sh \
-    && echo 'echo "Verifying PHP-FPM configuration..."' >> /start.sh \
-    && echo 'grep "listen = 127.0.0.1:9000" /usr/local/etc/php-fpm.d/zz-railway.conf || echo "WARNING: PHP-FPM not configured for TCP!"' >> /start.sh \
-    && echo 'echo "Starting services (Nginx + PHP-FPM)..."' >> /start.sh \
-    && echo 'echo "Nginx will listen on port $PORT"' >> /start.sh \
-    && echo 'echo "PHP-FPM will listen on 127.0.0.1:9000"' >> /start.sh \
+    && echo 'echo "Starting services immediately (Nginx + PHP-FPM)..."' >> /start.sh \
+    && echo 'echo "Laravel initialization will run in background after services start"' >> /start.sh \
     && echo 'exec /usr/bin/supervisord -c /etc/supervisord.conf' >> /start.sh \
     && chmod +x /start.sh
 
