@@ -40,9 +40,11 @@ Alright, let's get this thing running! First time setup is pretty straightforwar
 ### Step 1: Clone the repo
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/leppjemi/community-news-portal
 cd community-news-portal
 ```
+<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
+read_file
 
 ### Step 2: Run the setup
 
@@ -136,7 +138,7 @@ The `make setup-all` command should handle everything, but if you want to do thi
 ### Step 1: Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/leppjemi/community-news-portal
 cd community-news-portal
 ```
 
