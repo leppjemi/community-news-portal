@@ -1,5 +1,6 @@
 # Variables
-DOCKER_COMPOSE = docker compose -f docker-compose.yml
+PROJECT_NAME = community-news-portal
+DOCKER_COMPOSE = docker compose -p $(PROJECT_NAME) -f docker-compose.yml
 PHP_CONTAINER = app
 NGINX_CONTAINER = nginx
 DB_CONTAINER = db
