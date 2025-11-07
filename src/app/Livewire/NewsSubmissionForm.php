@@ -59,12 +59,14 @@ class NewsSubmissionForm extends Component
 
         if (empty($this->cover_image)) {
             $this->image_validation_message = 'Please enter an image URL first.';
+
             return;
         }
 
         // Validate URL format
-        if (!filter_var($this->cover_image, FILTER_VALIDATE_URL)) {
+        if (! filter_var($this->cover_image, FILTER_VALIDATE_URL)) {
             $this->image_validation_message = 'Please enter a valid URL.';
+
             return;
         }
 
@@ -74,6 +76,7 @@ class NewsSubmissionForm extends Component
 
             if ($headers === false) {
                 $this->image_validation_message = 'Cannot access this URL. Please check if it\'s correct.';
+
                 return;
             }
 
@@ -81,6 +84,7 @@ class NewsSubmissionForm extends Component
 
             if (strpos($statusCode, '200') === false) {
                 $this->image_validation_message = 'Image not found at this URL (HTTP '.$statusCode.').';
+
                 return;
             }
 
@@ -91,8 +95,9 @@ class NewsSubmissionForm extends Component
 
             $imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
 
-            if (!empty($contentType) && !in_array(strtolower($contentType), $imageTypes) && !str_contains(strtolower($contentType), 'image/')) {
+            if (! empty($contentType) && ! in_array(strtolower($contentType), $imageTypes) && ! str_contains(strtolower($contentType), 'image/')) {
                 $this->image_validation_message = 'This URL does not point to an image. Content type: '.$contentType;
+
                 return;
             }
 
@@ -110,10 +115,11 @@ class NewsSubmissionForm extends Component
         // Custom validation for cover_image URL
         $rules = $this->rules;
 
-        if (!empty($this->cover_image)) {
+        if (! empty($this->cover_image)) {
             // Validate URL format
-            if (!filter_var($this->cover_image, FILTER_VALIDATE_URL)) {
+            if (! filter_var($this->cover_image, FILTER_VALIDATE_URL)) {
                 $this->addError('cover_image', 'Please enter a valid URL.');
+
                 return;
             }
 
@@ -129,7 +135,7 @@ class NewsSubmissionForm extends Component
 
             // If URL has image extension, allow it (for testing and basic validation)
             // Otherwise, try to verify via headers
-            if (!$hasImageExtension) {
+            if (! $hasImageExtension) {
                 try {
                     $context = stream_context_create([
                         'http' => [
@@ -153,12 +159,14 @@ class NewsSubmissionForm extends Component
                             $imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
 
                             // If content type is available and not an image, reject it
-                            if (!empty($contentType) && !in_array(strtolower($contentType), $imageTypes) && !str_contains(strtolower($contentType), 'image/')) {
+                            if (! empty($contentType) && ! in_array(strtolower($contentType), $imageTypes) && ! str_contains(strtolower($contentType), 'image/')) {
                                 $this->addError('cover_image', 'This URL does not point to a valid image file.');
+
                                 return;
                             }
                         } elseif (strpos($statusCode, '404') !== false || strpos($statusCode, '403') !== false) {
                             $this->addError('cover_image', 'Image not found at this URL. Please check the URL.');
+
                             return;
                         }
                     }
@@ -184,7 +192,7 @@ class NewsSubmissionForm extends Component
         $post->title = $this->title;
         $post->content = $this->content;
         $post->category_id = $this->category_id;
-        $post->cover_image = !empty($this->cover_image) ? $this->cover_image : null;
+        $post->cover_image = ! empty($this->cover_image) ? $this->cover_image : null;
 
         $post->save();
 
