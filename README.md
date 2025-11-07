@@ -54,10 +54,28 @@ make setup-all
 
 This one command does everything for you - builds the containers, installs dependencies, sets up the database, creates some test users, the whole shebang. It'll take a few minutes the first time (especially if you're downloading Docker images), so grab a coffee ☕
 
+#### What `make setup-all` Does
+
+The `setup-all` command performs the following steps automatically:
+
+1. **Builds and starts containers** - Creates Docker images and starts all services (app, nginx, database, phpMyAdmin)
+2. **Waits for database** - Ensures MySQL is ready before proceeding
+3. **Sets up .env file** - Creates environment configuration from `.env.example` if it doesn't exist
+4. **Fixes permissions** - Sets proper file permissions for Laravel storage and cache directories
+5. **Installs Composer dependencies** - Downloads all PHP packages required by Laravel
+6. **Generates application key** - Creates a unique encryption key for Laravel
+7. **Installs NPM dependencies** - Downloads all Node.js packages for frontend assets
+8. **Builds frontend assets** - Compiles CSS and JavaScript using Vite
+9. **Runs migrations and seeds** - Creates database tables and populates with test data
+
+> **Note for WSL Users**: If you run `make up` from WSL terminal and then try to use Docker from Windows (or vice versa), you might see container name conflicts. This is because Docker Compose uses different project names based on the directory path. The project is configured with an explicit project name (`community-news-portal`) to prevent this issue. If you encounter conflicts, run `docker compose down` first, then `make up` again.
+
 Once it's done, you're ready to go! Open your browser and head to:
 
-- **Main app**: http://localhost:8000
-- **phpMyAdmin** (if you need it): http://localhost:8080
+- **Main app**: http://localhost:8000 or http://127.0.0.1:8000
+- **phpMyAdmin** (if you need it): http://localhost:8080 or http://127.0.0.1:8080
+
+> **Note**: Both `localhost` and `127.0.0.1` should work in your browser. If you're using automated tools or CI/CD, `127.0.0.1` is more reliable as it doesn't require hostname resolution.
 
 ### Test Accounts
 
@@ -192,7 +210,14 @@ After the initial setup, using the app is super simple. Just make sure Docker De
 make up
 ```
 
-That's it! Your app will be available at http://localhost:8000
+That's it! Your app will be available at:
+- http://localhost:8000 or http://127.0.0.1:8000
+
+> **Why both addresses?** 
+> - `localhost` is a hostname that gets resolved via DNS or `/etc/hosts`
+> - `127.0.0.1` is a direct IP address (IPv4 loopback)
+> - Both work in regular browsers, but `127.0.0.1` is more reliable for automated tools
+> - If `localhost` doesn't work (rare), try `127.0.0.1` instead
 
 ### Stopping Everything
 
@@ -403,6 +428,26 @@ make down
 make up
 ```
 
+### Container Name Conflicts
+
+If you see errors like "container name already in use" when running `make up`:
+
+This usually happens when containers were created from a different directory (e.g., WSL vs Windows). The project is configured with an explicit name to prevent this, but if it occurs:
+
+```bash
+# Stop and remove existing containers
+docker compose down
+
+# Remove any orphaned containers
+docker ps -a | grep community
+docker rm <container-id>
+
+# Then start fresh
+make up
+```
+
+The project uses `name: community-news-portal` in `docker-compose.yml` and `-p community-news-portal` in the Makefile to ensure consistent naming regardless of where you run it from.
+
 ### Clearing Caches
 
 Sometimes Laravel's caches get weird. Clear them all:
@@ -426,10 +471,49 @@ docker compose exec app php artisan route:clear
 
 ## 📝 A Few Notes
 
-- Database data persists in Docker volumes, so you won't lose it when you stop containers
-- Your source code is mounted as a volume, so changes show up immediately (no rebuild needed)
-- Storage permissions get fixed automatically when containers start
-- phpMyAdmin is available at http://localhost:8080 if you need to poke around the database
+- **Database persistence**: Database data persists in Docker volumes, so you won't lose it when you stop containers
+- **Hot reloading**: Your source code is mounted as a volume, so changes show up immediately (no rebuild needed)
+- **Auto permissions**: Storage permissions get fixed automatically when containers start
+- **Database access**: phpMyAdmin is available at http://localhost:8080 or http://127.0.0.1:8080 if you need to poke around the database
+- **Project naming**: The Docker Compose project uses an explicit name (`community-news-portal`) to ensure consistency when running from WSL or Windows
+- **Network access**: The application listens on `0.0.0.0:8000`, making it accessible via both `localhost` and `127.0.0.1`
+
+## 🌐 Accessing the Application
+
+### Browser Access
+
+You can access the application using either:
+
+- **Hostname**: http://localhost:8000
+- **IP Address**: http://127.0.0.1:8000
+
+Both should work in your regular browser. The difference:
+
+- **`localhost`**: A hostname that requires DNS/hostname resolution. May resolve to IPv4 (`127.0.0.1`) or IPv6 (`::1`)
+- **`127.0.0.1`**: Direct IPv4 loopback address, no resolution needed. More reliable for automated tools and CI/CD
+
+### Troubleshooting Access Issues
+
+If you can't access the application:
+
+1. **Check containers are running**:
+   ```bash
+   docker compose ps
+   ```
+   All services should show "Up" status.
+
+2. **Check port mapping**:
+   ```bash
+   docker compose port nginx 80
+   ```
+   Should show `0.0.0.0:8000`
+
+3. **Try the IP address directly**:
+   If `localhost` doesn't work, try `127.0.0.1:8000` instead
+
+4. **Check firewall settings**: Make sure your firewall isn't blocking port 8000
+
+5. **Check Docker Desktop**: Ensure Docker Desktop is running and WSL integration is enabled (if on Windows)
 
 ## 🤝 Contributing
 
