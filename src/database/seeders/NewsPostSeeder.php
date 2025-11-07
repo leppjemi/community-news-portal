@@ -17,7 +17,7 @@ class NewsPostSeeder extends Seeder
     {
         // Get first user and all categories
         $user = User::first();
-        if (! $user) {
+        if (!$user) {
             $this->command->error('No users found. Please run UserSeeder first.');
 
             return;
@@ -107,7 +107,7 @@ class NewsPostSeeder extends Seeder
     private function getImageUrl(string $title, string $content): string
     {
         $text = strtolower($title . ' ' . $content);
-        
+
         // Map keywords to search terms for Unsplash
         $keywordMap = [
             'king' => 'royalty',
@@ -164,7 +164,7 @@ class NewsPostSeeder extends Seeder
         // Generate a random seed based on title to get consistent but varied images
         $seed = crc32($title);
         $imageId = abs($seed) % 1000; // Use modulo to get a reasonable image ID
-        
+
         // Picsum Photos - random image with seed for consistency
         return "https://picsum.photos/seed/{$imageId}/800/600";
     }
