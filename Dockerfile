@@ -132,14 +132,15 @@ RUN chmod +x /usr/local/bin/init-app.sh
 
 # Create startup script
 RUN echo '#!/bin/sh' > /start.sh \
+    && echo 'set -x' >> /start.sh \
     && echo 'PORT=${PORT:-80}' >> /start.sh \
-    && echo 'echo "=== Starting Laravel Application ==="' >> /start.sh \
-    && echo 'echo "Configuring Nginx for port $PORT..."' >> /start.sh \
+    && echo 'echo "=== Starting Laravel Application ===" >&2' >> /start.sh \
+    && echo 'echo "Configuring Nginx for port $PORT..." >&2' >> /start.sh \
     && echo 'sed "s/PORT_PLACEHOLDER/$PORT/" /etc/nginx/http.d/default.conf.template > /etc/nginx/http.d/default.conf || true' >> /start.sh \
-    && echo 'echo "Nginx config created, listening on port $PORT"' >> /start.sh \
+    && echo 'echo "Nginx config created, listening on port $PORT" >&2' >> /start.sh \
     && echo 'cd /var/www/html' >> /start.sh \
-    && echo 'echo "Starting services immediately (Nginx + PHP-FPM)..."' >> /start.sh \
-    && echo 'echo "Laravel initialization will run in background after services start"' >> /start.sh \
+    && echo 'echo "Starting services immediately (Nginx + PHP-FPM)..." >&2' >> /start.sh \
+    && echo 'echo "Laravel initialization will run in background after services start" >&2' >> /start.sh \
     && echo 'exec /usr/bin/supervisord -c /etc/supervisord.conf' >> /start.sh \
     && chmod +x /start.sh
 
