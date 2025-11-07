@@ -1,4 +1,4 @@
-# Production Dockerfile for Railway
+# Production Dockerfile for Railway/Render
 FROM php:8.3-fpm-alpine AS base
 
 # Install system dependencies
@@ -20,8 +20,9 @@ RUN apk add --no-cache \
     supervisor \
     net-tools \
     iproute2 \
+    postgresql-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl gd opcache
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip exif pcntl gd opcache
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
